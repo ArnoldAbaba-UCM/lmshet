@@ -334,7 +334,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
         `;
-        statusDiv.innerHTML = `🤖 Auto Solver: <span id="solver-status-text">Active</span>`;
+        statusDiv.innerHTML = `🤖 Group 5 Solver: <span id="solver-status-text">Active</span>`;
         document.body.appendChild(statusDiv);
     }
 
